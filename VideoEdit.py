@@ -37,42 +37,67 @@ numClips = 50
 # 	subVideos.append(sys.argv[i])
 # print(subVideos)
 
-videoURL1 = "https://www.youtube.com/watch?v=IUN664s7N-c"
-videoURL2 = "https://www.youtube.com/watch?v=Cl_kXbhTi8k"
-videoURL3 = "https://www.youtube.com/watch?v=AA3bJ74uIPI"
-videoURL4 = "https://www.youtube.com/watch?v=G5RpJwCJDqc"
-videoURL5 = "https://www.youtube.com/watch?v=bVkZgH-iDlo"
-subVideos = [videoURL1,videoURL2,videoURL3,videoURL4,videoURL5]
+mainVideoURL = "https://www.youtube.com/watch?v=0ZQAxWCuUoc"
+mainVideoMinimum = 5
 
+
+videoURL1 = "https://www.youtube.com/watch?v=0raJ1-1BJ7s"
+videoURL2 = "https://www.youtube.com/watch?v=1MiZ685Tv6k"
+videoURL3 = "https://www.youtube.com/watch?v=KMiwORlwUVw"
+subVideos = [videoURL1,videoURL2,videoURL3]
 
 path = "/Users/sahilbambulkar/Desktop/videos/"
 
 videoLengths = []
 clips = []
+
 for i,url in enumerate(subVideos):
 
+	fileName = f"{i}.mp4"
 	my_video = YouTube(url)
 
 	print("Downloading ", end='')
 	print(my_video.title, end='...\n')
 
 	print("Video Length (seconds) ", end='')
-	print(my_video.length,end='...\n') #in seconds
-
+	print(my_video.length) #in seconds
+	
 	videoLen = my_video.length
 	videoLengths.append(videoLen)
-	my_video = my_video.streams.get_highest_resolution()
-	my_video.download(path,f"{i}.mp4")
+
+	if not os.path.exists(path+fileName):
+		my_video = my_video.streams.get_highest_resolution()
+		my_video.download(path,f"{i}.mp4")
+
+
+
+	#else:
+
+	# print(path+fileName,end=' ')
+	# print('already downloaded')
 
 
 # eachVidLen = finalVideoLength//len(subVideos)
+if not os.path.exists(path+'main.mp4'):
+	my_video = YouTube(mainVideoURL)
+	mainvideoLen = my_video.length
+	my_video = my_video.streams.get_highest_resolution()
+	my_video.download(path,"main.mp4")
+
+mainvideoLen = 186
 
 
 currClip = 0
-eachVidLen = finalVideoLength//10
+eachVidLen = finalVideoLength//numClips
 
 clips = []
 i = 0 
+
+mainIdx = 0
+
+fileName = path + "main.mp4"
+clip = VideoFileClip(fileName).subclip(mainIdx,mainIdx+mainVideoMinimum)
+clips.append(clip)
 
 while currClip<numClips:
 	currClip+=1
@@ -83,13 +108,28 @@ while currClip<numClips:
 	fileName = path + fileName
 	clip = VideoFileClip(fileName).subclip(start,end)
 	clips.append(clip)
+	
+
+	if mainIdx<mainvideoLen:
+		mainIdx += eachVidLen
+		fileName = path + "main.mp4"
+		endMain = mainIdx+mainVideoMinimum if mainIdx+mainVideoMinimum<mainvideoLen else mainvideoLen
+		clip = VideoFileClip(fileName).subclip(mainIdx,endMain)
+		mainIdx = endMain
+		clips.append(clip)
+
 	i = (i+1) % len(subVideos)
+
+# if mainIdx<mainvideoLen:
+# 	fileName = path + "main.mp4"
+# 	clip = VideoFileClip(fileName).subclip(mainIdx,mainvideoLen)
+# 	clips.append(clip)
+
 
 combined = concatenate_videoclips(clips)
 combined.write_videofile(path+"finalVideo.mp4")
 
-
-##clean-up
+#clean-up
 for i,url in enumerate(subVideos):
 	fileName = f"{i}.mp4"
 	fileName = path + fileName
